@@ -1,64 +1,40 @@
 <!DOCTYPE html>
-<html lang="en" manifest="cache.appcache">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="preload" as="image" href="store_ad.jpg">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preload" as="image" href="store_ad.jpg">
 <title>MOHAMMED AI STORE</title>
 <style>
   html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #05070a;
-    color: #fff;
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; background: #05070a; color: #fff;
     font: 15px/1.45 "Segoe UI", system-ui, sans-serif;
   }
-
   #storeAd {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1;
-    overflow: hidden;
-    background: #05070a;
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    z-index: 1; overflow: hidden; background: #05070a;
   }
-
   #storeAd img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-    object-position: center;
+    width: 100%; height: 100%; display: block;
+    object-fit: cover; object-position: center;
   }
-
   #storeAd::after {
-    content: "";
-    position: absolute;
-    inset: 0;
+    content: ""; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.18));
     pointer-events: none;
   }
-
+  #brand { position: fixed; top: 10px; left: 14px; z-index: 4; font-size: 15px;
+    color: #fff; text-shadow: 0 2px 8px #000; }
   #wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    padding: 8px 14px 10px;
-    box-sizing: border-box;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
+    padding: 8px 14px 10px; box-sizing: border-box;
     background: linear-gradient(180deg, transparent, rgba(0,0,0,.78));
     text-shadow: 0 2px 8px #000;
   }
-
   #state { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
   #det { font-size: 12px; color: #dce5ef; margin: 0; }
-  #cache { font-size: 11px; color: #b9c5d1; margin: 2px 0 0; min-height: 12px; }
-  #cache.cacheok { color: #a8ffd0; }
-  .ok { color: #a8ffd0; } .bad { color: #ffd0d0; } .warn { color: #ffe39a; }
+  .bad { color: #ffd0d0; }
 </style>
 </head>
 <body>
@@ -67,107 +43,38 @@
 <div id="wrap">
   <div id="state">detecting firmware...</div>
   <div id="det"></div>
-  <div id="cache"></div>
 </div>
-
 <script>
 (function () {
-    var stateEl = document.getElementById("state");
-    var detEl = document.getElementById("det");
-    var cacheEl = document.getElementById("cache");
-    function setState(t, c) { stateEl.textContent = t; stateEl.className = c || ""; }
-    function setCache(t, ok) { cacheEl.textContent = t; cacheEl.className = ok ? "cacheok" : ""; }
-    var params = new URLSearchParams(location.search);
-
-    // Firmwares this build has a MEASURED kernel table for. jb.js still runs its
-    // own kernel-table-present gate, so this is UX only -- an unlisted firmware
-    // can still be launched with a tap. KEEP IN SYNC with ps4_offsets.js: add a
-    // fwnum here in the SAME commit that fills that firmware's kernel RVAs.
-    // The PS4 reports its minor as two hex digits in the UA (13.52 -> minor 0x52).
-    var SUPPORTED = { 1302: 1, 1304: 1, 1350: 1, 1352: 1 }; // all measured on hardware
-
-    var key = null, fwnum = null;
-    var m = /PlayStation\s+4[\/ ](\d+)\.(\d+)/.exec(navigator.userAgent);
-    if (m) {
-        var ms = parseInt(m[2], 16).toString(16);
-        if (ms.length < 2) ms = "0" + ms;
-        key = m[1] + "." + ms;
-        fwnum = parseInt(m[1], 10) * 100 + parseInt(ms, 10);
-    }
-
-    var forced = params.get("force") === "1";
-    var supported = forced || (fwnum !== null && SUPPORTED[fwnum] === 1);
-    detEl.innerHTML = "firmware <b>" + (key || "unknown") + "</b>"
-        + (supported ? " &middot; <b>supported</b>"
-                     : " &middot; not in this build's kernel table");
-
-    var target = "jb.html" + location.search;
-    function go() { setState("loading jailbreak...", "warn"); location.replace(target); }
-
-    function waitForTap(msg, action) {
-        setState(msg, "warn");
-        function fire() {
-            window.removeEventListener("click", fire);
-            window.removeEventListener("keydown", fire);
-            action();
-        }
-        window.addEventListener("click", fire);
-        window.addEventListener("keydown", fire);
-    }
-
-    // Off-target consoles are not launched automatically -- one tap still runs
-    // it, so a user-agent quirk on the real 13.52 console can never lock it out.
-    if (!supported) {
-        setState("UNSUPPORTED FIRMWARE", "bad");
-        waitForTap("UNSUPPORTED (" + (key || "unknown") + ") -- press X or tap to run anyway", go);
-        return;
-    }
-
-    var ac = window.applicationCache;
-    if (!ac || !document.documentElement.hasAttribute("manifest")) {
-        go();
-    } else if (!navigator.onLine) {
-        setCache("offline -- from cache", true);
-        go();
-    } else if (ac.status === ac.IDLE) {
-        setCache("cached", true);
-        go();
-    } else if (ac.status === ac.UPDATEREADY) {
-        try { ac.swapCache(); } catch (e) {}
-        setCache("update downloaded", true);
-        waitForTap("UPDATE READY -- press X or tap to reload & run",
-                   function () { location.reload(); });
-    } else {
-        setCache("checking cache...");
-        ac.addEventListener("downloading",
-            function () { setCache("caching for offline (first run)..."); }, false);
-        ac.addEventListener("progress", function (e) {
-            if (e && e.total)
-                setCache("caching " + Math.round((e.loaded / e.total) * 100) + "%");
-        }, false);
-        ac.addEventListener("cached", function () {
-            setCache("cached for offline use", true);
-            waitForTap("CACHED (first run) -- press X or tap to run", go);
-        }, false);
-        ac.addEventListener("updateready", function () {
-            try { ac.swapCache(); } catch (e) {}
-            setCache("update downloaded", true);
-            waitForTap("UPDATE READY -- press X or tap to reload & run",
-                       function () { location.reload(); });
-        }, false);
-        ac.addEventListener("noupdate", function () {
-            setCache("cached -- offline ready", true);
-            go();
-        }, false);
-        ac.addEventListener("error", function () {
-            setCache("cache unavailable");
-            waitForTap("CACHE FAILED -- press X or tap to run anyway", go);
-        }, false);
-        ac.addEventListener("obsolete", function () {
-            setCache("cache obsolete");
-            waitForTap("CACHE OBSOLETE -- press X or tap to run", go);
-        }, false);
-    }
+  var stateEl = document.getElementById("state");
+  var detEl = document.getElementById("det");
+  var params = new URLSearchParams(location.search);
+  var fwnum = null, fwkey = null;
+  var m = /PlayStation\s+4[\/ ](\d+)\.(\d+)/.exec(navigator.userAgent);
+  if (m) {
+    var ms = parseInt(m[2], 16).toString(16);
+    if (ms.length < 2) ms = "0" + ms;
+    fwkey = m[1] + "." + ms;
+    fwnum = parseInt(m[1], 10) * 100 + parseInt(ms, 10);
+  }
+  var target = null;
+  if (fwnum !== null) {
+    if (fwnum >= 900 && fwnum <= 960) target = "fw900.html";
+    else if (fwnum >= 1000 && fwnum <= 1102) target = "fw1000.html";
+    else if (fwnum >= 1150 && fwnum <= 1300) target = "fw1150.html";
+    else if (fwnum >= 1302 && fwnum <= 1352) target = "jb.html";
+  }
+  if (params.get("force") === "1" || target) {
+    detEl.innerHTML = "firmware <b>" + (fwkey || "unknown") + "</b> &middot; loading host...";
+    location.replace((target || "jb.html") + location.search);
+    return;
+  }
+  stateEl.textContent = "UNSUPPORTED FIRMWARE";
+  stateEl.className = "bad";
+  detEl.innerHTML = "firmware <b>" + (fwkey || "unknown") + "</b> &middot; press X or tap to try anyway";
+  function go() { location.replace("jb.html" + location.search); }
+  window.addEventListener("click", go);
+  window.addEventListener("keydown", go);
 })();
 </script>
 </body>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" manifest="cache-900.manifest">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preload" as="image" href="store_ad.jpg">
+<title>MOHAMMED AI STORE</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; background: #05070a; color: #fff;
+    font: 15px/1.45 "Segoe UI", system-ui, sans-serif;
+  }
+  #storeAd {
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    z-index: 1; overflow: hidden; background: #05070a;
+  }
+  #storeAd img {
+    width: 100%; height: 100%; display: block;
+    object-fit: cover; object-position: center;
+  }
+  #storeAd::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.18));
+    pointer-events: none;
+  }
+  #brand { position: fixed; top: 10px; left: 14px; z-index: 4; font-size: 15px;
+    color: #fff; text-shadow: 0 2px 8px #000; }
+  #spin {
+    position: fixed; top: 50%; left: 50%; width: 46px; height: 46px;
+    margin: -23px 0 0 -23px; border: 4px solid rgba(255,255,255,.25);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.9s linear infinite; z-index: 5;
+    filter: drop-shadow(0 0 8px rgba(0,0,0,.9));
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #wrap {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
+    padding: 10px 14px 12px; box-sizing: border-box;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.80));
+    text-shadow: 0 2px 8px #000;
+  }
+  #msgs { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
+  #sub { font-size: 12px; color: #dce5ef; margin: 0; min-height: 14px; }
+  #sub.ok { color: #a8ffd0; }
+</style>
+</head>
+<body>
+<div id="brand"><b>MOHAMMED AI STORE</b></div>
+<div id="storeAd" aria-label="Store advertisement"><img src="store_ad.jpg" alt="MOHAMMED AI Store advertisement" onerror="this.style.display='none'"></div>
+<div id="spin"></div>
+<div id="wrap">
+  <div id="msgs">starting...</div>
+  <div id="sub"></div>
+</div>
+<script>
+(function () {
+
+  /* Patch blobs (.elf/.bin) ship as base64 text (.b64); decode transparently. */
+  (function () {
+    if (!window.fetch) return;
+    var realFetch = window.fetch.bind(window);
+    function b64ToU8(t) {
+      t = String(t).replace(/\\s+/g, "");
+      var bin = atob(t);
+      var u8 = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return u8;
+    }
+    window.fetch = function (url, opts) {
+      var u = String((url && url.url) || url || "");
+      if (/(\.elf|\/patches\/[^\/]*\.bin)$/.test(u)) {
+        return realFetch(u + ".b64", opts).then(function (r) {
+          if (!r.ok) throw new Error("patch fetch failed: " + u);
+          return r.text();
+        }).then(function (t) {
+          var u8 = b64ToU8(t);
+          return { ok: true, status: 200,
+            arrayBuffer: function () { return Promise.resolve(u8.buffer); } };
+        });
+      }
+      return realFetch(url, opts);
+    };
+  })();
+  var msgs = document.getElementById("msgs");
+  var sub = document.getElementById("sub");
+  var spin = document.getElementById("spin");
+  function setSub(t, ok) { sub.textContent = t; sub.className = ok ? "ok" : ""; }
+  var fwnum = null, fwkey = null;
+  var m = /PlayStation\s+4[\/ ](\d+)\.(\d+)/.exec(navigator.userAgent);
+  if (m) {
+    var ms = parseInt(m[2], 16).toString(16);
+    if (ms.length < 2) ms = "0" + ms;
+    fwkey = m[1] + "." + ms;
+    fwnum = parseInt(m[1], 10) * 100 + parseInt(ms, 10);
+  }
+  function inject(src, isModule, onload) {
+    spin.style.display = "none";
+    var s = document.createElement("script");
+    if (isModule) s.type = "module";
+    s.src = src;
+    if (onload) s.onload = onload;
+    s.onerror = function () {
+      msgs.textContent = "Failed to load exploit files";
+      msgs.style.color = "#ffd0d0";
+      setSub("clear browser data and re-open this page");
+    };
+    document.head.appendChild(s);
+  }
+  function runChain() {
+    inject("900/alert.js", true);
+  }
+  function cacheDone() {
+    spin.style.display = "none";
+    msgs.innerHTML = "Cache Installed Successfully &#10004;";
+    setSub("Now turn OFF the internet, then CLOSE and RE-OPEN the browser", true);
+  }
+  var ac = window.applicationCache;
+  if (!ac || !document.documentElement.hasAttribute("manifest")) { runChain(); return; }
+  if (!navigator.onLine) { setSub("offline \u2014 running from cache", true); runChain(); return; }
+  if (ac.status === ac.IDLE) { setSub("cached \u2014 offline ready", true); runChain(); return; }
+  if (ac.status === ac.UPDATEREADY) { try { ac.swapCache(); } catch (e) {} location.reload(); return; }
+  setSub("installing offline cache...");
+  ac.addEventListener("progress", function (e) {
+    if (e && e.total) setSub("installing offline cache: " + Math.round(e.loaded / e.total * 100) + "%");
+  }, false);
+  ac.addEventListener("cached", cacheDone, false);
+  ac.addEventListener("updateready", function () { try { ac.swapCache(); } catch (e) {} cacheDone(); }, false);
+  ac.addEventListener("noupdate", function () { setSub("cached \u2014 offline ready", true); runChain(); }, false);
+  ac.addEventListener("error", function () { setSub("cache failed \u2014 running anyway"); runChain(); }, false);
+  ac.addEventListener("obsolete", function () { setSub("cache obsolete \u2014 running anyway"); runChain(); }, false);
+})();
+</script>
+</body>
+</html>

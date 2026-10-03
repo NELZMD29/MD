@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" manifest="cache.appcache">
+<html lang="en" manifest="cache-1300.manifest">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" /><link rel="preload" as="image" href="store_ad.jpg">
@@ -128,8 +128,45 @@
       <div id="state"></div>
       <div id="out"></div>
     </div>
-    <script type="module">
-      import "./jb.js?v=10";
+    <script>
+      // Cache gate: the 13.x exploit only runs once its files are cached
+      // (or when offline / cache already ready). After a fresh install the
+      // user is told to turn off the internet and re-open the browser.
+      (function () {
+        var stateEl = document.getElementById("state");
+        var spin = document.getElementById("spin");
+        function run() {
+          document.body.className = "";
+          spin.style.display = "";
+          var s = document.createElement("script");
+          s.type = "module";
+          s.src = "./jb.js?v=10";
+          s.onerror = function () { document.body.className = "fail"; };
+          document.head.appendChild(s);
+        }
+        function cacheDone() {
+          document.body.className = "log";
+          spin.style.display = "none";
+          stateEl.innerHTML = "Cache Installed Successfully &#10004;<br>" +
+            "Now turn OFF the internet, then CLOSE and RE-OPEN the browser";
+        }
+        var ac = window.applicationCache;
+        document.body.className = "log";
+        if (!ac || !document.documentElement.hasAttribute("manifest")) { run(); return; }
+        if (!navigator.onLine) { stateEl.textContent = "offline \u2014 running from cache"; run(); return; }
+        if (ac.status === ac.IDLE) { stateEl.textContent = "cached \u2014 offline ready"; run(); return; }
+        if (ac.status === ac.UPDATEREADY) { try { ac.swapCache(); } catch (e) {} location.reload(); return; }
+        spin.style.display = "none";
+        stateEl.textContent = "installing offline cache...";
+        ac.addEventListener("progress", function (e) {
+          if (e && e.total) stateEl.textContent = "installing offline cache: " + Math.round(e.loaded / e.total * 100) + "%";
+        }, false);
+        ac.addEventListener("cached", cacheDone, false);
+        ac.addEventListener("updateready", function () { try { ac.swapCache(); } catch (e) {} cacheDone(); }, false);
+        ac.addEventListener("noupdate", function () { stateEl.textContent = "cached \u2014 offline ready"; run(); }, false);
+        ac.addEventListener("error", function () { stateEl.textContent = "cache failed \u2014 running anyway"; run(); }, false);
+        ac.addEventListener("obsolete", function () { stateEl.textContent = "cache obsolete \u2014 running anyway"; run(); }, false);
+      })();
     </script>
   </body>
 </html>

@@ -1,0 +1,24 @@
+CACHE MANIFEST
+# rev 20261003-mohammed-ai-multi-fw-v10
+
+CACHE:
+fw1000.html
+index.html
+store_ad.jpg
+goldhen.bin
+css/main.js
+css/misc.js
+css/lapse.js
+css/loader.js
+css/worker.js
+css/workers.js
+css/ps4/constants.js
+css/ps4/kernel.js
+css/ps4/userland.js
+css/ps4/patches/1000.bin.b64
+css/ps4/patches/1050.bin.b64
+css/ps4/patches/1100.bin.b64
+css/ps4/patches/1102.bin.b64
+
+NETWORK:
+*

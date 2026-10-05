@@ -1,0 +1,29 @@
+CACHE MANIFEST
+# rev 20261005-mohammed-ai-oso-transfer-v11
+
+CACHE:
+cacheslopkit.html
+index.html
+../store_ad.jpg
+../style.css
+../goldhen.bin
+slopkit/chain_lapse.js
+slopkit/chain_poops.js
+slopkit/core.js
+slopkit/int64.js
+slopkit/jb.js
+slopkit/mem.js
+slopkit/ps4_offsets.js
+slopkit/rpc_worker.js
+slopkit/jb.js?v=19
+slopkit/core.js?v=10
+slopkit/patches/1150.bin.b64
+slopkit/patches/1200.bin.b64
+slopkit/patches/1250.bin.b64
+slopkit/patches/1300.bin.b64
+slopkit/patches/1302.bin.b64
+slopkit/patches/1350.bin.b64
+slopkit/patches/1352.bin.b64
+
+NETWORK:
+*

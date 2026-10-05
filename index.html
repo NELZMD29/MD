@@ -6,76 +6,23 @@
 <link rel="preload" as="image" href="store_ad.jpg">
 <title>MOHAMMED AI STORE</title>
 <style>
-  html, body {
-    margin: 0; padding: 0; width: 100%; height: 100%;
-    overflow: hidden; background: #05070a; color: #fff;
-    font: 15px/1.45 "Segoe UI", system-ui, sans-serif;
-  }
-  #storeAd {
-    position: fixed; inset: 0; width: 100vw; height: 100vh;
-    z-index: 1; overflow: hidden; background: #05070a;
-  }
-  #storeAd img {
-    width: 100%; height: 100%; display: block;
-    object-fit: cover; object-position: center;
-  }
-  #storeAd::after {
-    content: ""; position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.18));
-    pointer-events: none;
-  }
-  #brand { position: fixed; top: 10px; left: 14px; z-index: 4; font-size: 15px;
-    color: #fff; text-shadow: 0 2px 8px #000; }
-  #wrap {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
-    padding: 8px 14px 10px; box-sizing: border-box;
-    background: linear-gradient(180deg, transparent, rgba(0,0,0,.78));
-    text-shadow: 0 2px 8px #000;
-  }
-  #state { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
-  #det { font-size: 12px; color: #dce5ef; margin: 0; }
-  .bad { color: #ffd0d0; }
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:#05070a; color:#fff; font:15px/1.45 "Segoe UI",system-ui,sans-serif; }
+  #storeAd { position:fixed; inset:0; width:100vw; height:100vh; z-index:1;
+    overflow:hidden; background:#05070a; }
+  #storeAd img { width:100%; height:100%; display:block; object-fit:cover; object-position:center; }
+  #wrap { position:fixed; left:0; right:0; bottom:0; z-index:3; padding:8px 14px 10px;
+    box-sizing:border-box; background:linear-gradient(180deg,transparent,rgba(0,0,0,.78));
+    text-shadow:0 2px 8px #000; }
+  #state { font-size:20px; font-weight:700; }
 </style>
 </head>
 <body>
-<div id="brand"><b>MOHAMMED AI STORE</b></div>
-<div id="storeAd" aria-label="Store advertisement"><img src="store_ad.jpg" alt="MOHAMMED AI Store advertisement" onerror="this.style.display='none'"></div>
-<div id="wrap">
-  <div id="state">detecting firmware...</div>
-  <div id="det"></div>
-</div>
+<div id="storeAd"><img src="store_ad.jpg" alt="MOHAMMED AI Store" onerror="this.style.display='none'"></div>
+<div id="wrap"><div id="state">MOHAMMED AI STORE &middot; loading...</div></div>
 <script>
-(function () {
-  var stateEl = document.getElementById("state");
-  var detEl = document.getElementById("det");
-  var params = new URLSearchParams(location.search);
-  var fwnum = null, fwkey = null;
-  var m = /PlayStation\s+4[\/ ](\d+)\.(\d+)/.exec(navigator.userAgent);
-  if (m) {
-    var ms = parseInt(m[2], 16).toString(16);
-    if (ms.length < 2) ms = "0" + ms;
-    fwkey = m[1] + "." + ms;
-    fwnum = parseInt(m[1], 10) * 100 + parseInt(ms, 10);
-  }
-  var target = null;
-  if (fwnum !== null) {
-    if (fwnum >= 900 && fwnum <= 960) target = "fw900.html";
-    else if (fwnum >= 1000 && fwnum <= 1102) target = "fw1000.html";
-    else if (fwnum >= 1150 && fwnum <= 1300) target = "fw1150.html";
-    else if (fwnum >= 1302 && fwnum <= 1352) target = "jb.html";
-  }
-  if (params.get("force") === "1" || target) {
-    detEl.innerHTML = "firmware <b>" + (fwkey || "unknown") + "</b> &middot; loading host...";
-    location.replace((target || "jb.html") + location.search);
-    return;
-  }
-  stateEl.textContent = "UNSUPPORTED FIRMWARE";
-  stateEl.className = "bad";
-  detEl.innerHTML = "firmware <b>" + (fwkey || "unknown") + "</b> &middot; press X or tap to try anyway";
-  function go() { location.replace("jb.html" + location.search); }
-  window.addEventListener("click", go);
-  window.addEventListener("keydown", go);
-})();
+  // Auto-detect PS4 firmware and enter the multi-fw host (same proven flow as g2all).
+  location.replace("g2all/index.html" + location.search);
 </script>
 </body>
 </html>

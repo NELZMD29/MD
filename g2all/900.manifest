@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# rev 20261005-mohammed-ai-oso-transfer-v11
+# rev 20261023-mohammed-ai-v11-goldhen-path-fix
 
 CACHE:
 cache900.html
@@ -7,6 +7,8 @@ index.html
 ../store_ad.jpg
 ../style.css
 ../goldhen.bin
+
+goldhen.bin
 900/alert.js
 900/config.js
 900/lapse.js

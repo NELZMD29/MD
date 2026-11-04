@@ -12,6 +12,13 @@ var isPS4 = match !== null;
 var fwVersion = isPS4 ? match[1] : "Unknown";
 var fwNum = parseFloat(fwVersion);
 
+// FW 14.00 is served by the dedicated afterglow section (separate folder and
+// cache). This branch only fires for a firmware g2all never supported --
+// every 7.00-13.52 path below is unchanged.
+if (isPS4 && fwNum > 13.52 && fwNum <= 14.00) {
+    window.location.replace("../fw1400/index.html" + location.search);
+}
+
 function onScriptError() {
     msgs.innerHTML = "Content not Found! - Clear Browser Data and Re-Install Cache ...";
 }

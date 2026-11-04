@@ -21,8 +21,16 @@
 <div id="storeAd"><img src="store_ad.jpg" alt="MOHAMMED AI Store" onerror="this.style.display='none'"></div>
 <div id="wrap"><div id="state">MOHAMMED AI STORE &middot; loading...</div></div>
 <script>
-  // Auto-detect PS4 firmware and enter the multi-fw host (same proven flow as g2all).
-  location.replace("g2all/index.html" + location.search);
+  // Auto-detect PS4 firmware: 14.00 goes to its dedicated afterglow section
+  // (fw1400/, separate folder and cache); everything else enters the proven
+  // multi-fw host (same flow as g2all).
+  var fwMatch = navigator.userAgent.match(/PlayStation 4[ /]([\d.]+)/i);
+  var fwNum = fwMatch ? parseFloat(fwMatch[1]) : 0;
+  if (fwNum > 13.52 && fwNum <= 14.00) {
+    location.replace("fw1400/index.html" + location.search);
+  } else {
+    location.replace("g2all/index.html" + location.search);
+  }
 </script>
 </body>
 </html>

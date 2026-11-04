@@ -1,0 +1,45 @@
+<!doctype html>
+<html class="landing" lang="en" manifest="cache.appcache">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MOHAMMED AI STORE — PS4 14.00 GoldHEN</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Every run starts from here. The referrer guard in jb.js arms the chain
+         only when it was reached from this page, so that a browser restoring
+         its last session cannot re-run it unattended. -->
+    <div id="storeAd"><img src="../store_ad.jpg" alt="MOHAMMED AI Store" onerror="this.style.display='none'"></div>
+    <div id="brand"><b>MOHAMMED AI STORE</b></div>
+
+    <div class="shell">
+      <main class="panel">
+        <p class="lede">PS4 GoldHEN &middot; firmware 14.00<br>تهكير PS4 — إصدار 14.00 · متجر محمد AI · 07707089760</p>
+
+        <form class="pick" id="pick">
+          <label class="opt">
+            <input type="radio" name="payload" value="hen" />
+            <span>ps4-hen</span>
+          </label>
+          <label class="opt">
+            <input type="radio" name="payload" value="goldhen" checked />
+            <span>GoldHEN</span>
+          </label>
+
+          <label class="opt opt-auto">
+            <input type="checkbox" id="auto" checked />
+            <span>autostart</span>
+          </label>
+
+          <button class="btn" type="submit">start</button>
+          <p class="count" id="count"></p>
+          <p class="count" id="cache" aria-live="polite"></p>
+        </form>
+      </main>
+    </div>
+
+    <p class="byline">afterglow by well0nez/m0zz &middot; host by MOHAMMED AI STORE</p>
+    <script src="launch.js"></script>
+  </body>
+</html>

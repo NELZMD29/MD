@@ -17,6 +17,18 @@ var countEl = document.getElementById("count");
 var cacheEl = document.getElementById("cache");
 var ticker = null;
 var waitingForCache = false;
+var cacheTimer = null;
+var gone = false;
+
+/* How long the start may wait for the cache before it goes anyway.
+ *
+ * With no route the manifest check does not fail fast -- it sits on a
+ * network timeout, measured at 20-30 s on a console, and the page said
+ * "waiting for the cache" the whole time. Offline use is a first-class
+ * case here, not an edge case: the files are already on disk, and a run
+ * from them is exactly as good. So the wait is a courtesy with an upper
+ * bound, never a gate. */
+var CACHE_WAIT_MS = 4000;
 
 /* The offline cache, and the one state that must not be run through.
  *
@@ -45,6 +57,27 @@ function cacheBusy() {
   }
 }
 
+/* UPDATEREADY used to print "reopen this page" and leave it at that -- while
+   the autostart clock kept running and navigated with the files the page had
+   loaded with, which are the OLD ones. On a console that is not a hint anyone
+   can act on: there is no keyboard here, and nobody retypes a URL with a
+   controller. So swap the cache and reload, which is what reopening the page
+   would have done.
+   The timestamp guard, not a once-per-session flag: a second update later in
+   the same session must still be picked up, and two reloads inside ten
+   seconds would be a loop. */
+var SWAP_KEY = "afterglow.swapped";
+
+function swapAndReload() {
+  var last = 0;
+  try { last = parseInt(sessionStorage.getItem(SWAP_KEY) || "0", 10) || 0; } catch (e) {}
+  if (Date.now() - last < 10000) return false;
+  try { sessionStorage.setItem(SWAP_KEY, String(Date.now())); } catch (e) {}
+  try { appCache.swapCache(); } catch (e) {}
+  location.reload();
+  return true;
+}
+
 function cacheNote() {
   if (!cacheEl) return;
   if (!appCache) { cacheEl.textContent = ""; return; }
@@ -52,7 +85,7 @@ function cacheNote() {
   try {
     if (appCache.status === appCache.CHECKING) text = "checking for updates";
     else if (appCache.status === appCache.DOWNLOADING) text = "loading files - hold on";
-    else if (appCache.status === appCache.UPDATEREADY) text = "a newer version is cached - reopen this page to use it";
+    else if (appCache.status === appCache.UPDATEREADY) text = "newer version cached - reloading";
     else if (appCache.status === appCache.OBSOLETE) text = "the cache was dropped - the server answers directly";
   } catch (e) {}
   cacheEl.textContent = text;
@@ -60,6 +93,14 @@ function cacheNote() {
 
 function cacheChanged() {
   cacheNote();
+  /* A newer build is on disk. Take it before anything starts. */
+  try {
+    if (appCache && appCache.status === appCache.UPDATEREADY) {
+      stopClock();
+      cacheNote();
+      if (swapAndReload()) return;
+    }
+  } catch (e) {}
   /* Someone pressed start while the files were still coming down. Go now
      that they are here, rather than making them press again. */
   if (waitingForCache && !cacheBusy()) {
@@ -110,29 +151,42 @@ function picked() {
   return radio ? radio.value : "goldhen";
 }
 
-/* MOHAMMED AI STORE: this section carries a kernel stage for 14.00 and
-   13.52 only. The chain in jb.js refuses anything else before touching the
-   kernel; this landing-side check just says so up front, in the open,
-   instead of letting the autostart clock run a customer on the wrong
-   firmware into the run page. Non-PS4 browsers (testing on a PC/phone)
-   are not blocked. */
-var uaMatch = navigator.userAgent.match(/PlayStation 4[ /]([\d.]+)/i);
-var fwSupported = !uaMatch || uaMatch[1] === "14.00" || uaMatch[1] === "13.52";
-
 function start() {
   stopClock();
-  if (!fwSupported) {
-    countEl.textContent = "firmware " + uaMatch[1] + " is not supported here - this page is for 14.00 (and 13.52)";
-    return;
-  }
-  /* Not a refusal -- a wait. The run begins by itself once the files are in. */
-  if (cacheBusy()) {
+  /* A newer build is already on disk: take it and come back as a fresh page
+     load. UPDATEREADY is deliberately NOT part of cacheBusy() -- if the
+     timestamp guard refuses the swap, we must go on rather than wait for an
+     event that will not come again. */
+  try {
+    if (appCache && appCache.status === appCache.UPDATEREADY) {
+      if (swapAndReload()) return;
+    }
+  } catch (e) {}
+  /* Not a refusal -- a bounded wait, and offline none at all. */
+  if (!offline() && cacheBusy()) {
     waitingForCache = true;
     countEl.textContent = "waiting for the cache";
     cacheNote();
+    if (cacheTimer === null) {
+      cacheTimer = setTimeout(function () {
+        cacheTimer = null;
+        if (!gone) { countEl.textContent = "cache did not answer - going anyway"; go(); }
+      }, CACHE_WAIT_MS);
+    }
     return;
   }
+  go();
+}
+
+function go() {
+  if (gone) return;
+  gone = true;
+  if (cacheTimer !== null) { clearTimeout(cacheTimer); cacheTimer = null; }
   location.href = "jb.html?" + TARGET[picked()];
+}
+
+function offline() {
+  try { return navigator.onLine === false; } catch (e) { return false; }
 }
 
 function stopClock() {
@@ -178,7 +232,4 @@ form.addEventListener("change", function (ev) {
 
 restore();
 cacheNote();
-if (!fwSupported) {
-  autoBox.checked = false;
-  countEl.textContent = "firmware " + uaMatch[1] + " is not supported here - this page is for 14.00 (and 13.52)";
-} else if (autoBox.checked) startClock();
+if (autoBox.checked) startClock();
